@@ -22,7 +22,7 @@ function createWindow () {
     width: 800,
     frame: false,
     fullscreenable: false,
-    resizable: true,
+    resizable: false,
   })
 
   mainWindow.loadURL(winURL)

@@ -45,13 +45,20 @@ async function Decrypt(file) {
   const fileBuffer = file.fileBuffer;
   const audioData = new Uint8Array(fileBuffer);
   const audioDataLen = audioData.length;
+  //获取信息
+  const musicData = new Blob([audioData], {
+    type: mime
+  });
+  const meta = await musicMetadata.parseBlob(musicData);
+  const artist = meta.common.artist;
+  const title = meta.common.title;
   // 转换数据
   const seed = new Mask();
   for (let cur = 0; cur < audioDataLen; ++cur) {
     audioData[cur] ^= seed.NextMask();
   }
   // 文件名
-  const filename = file.name + new_ext;
+  const filename = file.autoRename ? (artist + ' - ' + title + '.' + new_ext) : (file.name + '.' + new_ext);
   // 返回
   return {
     success: true,

@@ -4,6 +4,7 @@ export {
 }
 
 async function Decrypt(file) {
+  
   // 获取扩展名
   let filename_ext = file.ext;
   if (filename_ext !== "mflac") return {
@@ -26,9 +27,17 @@ async function Decrypt(file) {
   for (let cur = 0; cur < audioDataLen; ++cur) {
     audioData[cur] ^= seed.NextMask();
   }
+  
+  //获取信息
+  const musicData = new Blob([audioData], {
+    type: "audio/flac"
+  });
+  const meta = await musicMetadata.parseBlob(musicData);
+  const artist = meta.common.artist;
+  const title = meta.common.title;
 
   //文件名
-  const filename = file.name + ".flac";
+  const filename = file.autoRename ? (artist + ' - ' + title + '.flac') : (file.name + '.flac');
 
   //返回
   return {

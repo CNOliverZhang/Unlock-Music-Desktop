@@ -159,9 +159,9 @@ async function Decrypt(file) {
       }
     }
     writer.addTag();
-    audioData = writer.arrayBuffer;
+    audioData = new Uint8Array(writer.arrayBuffer);
   }
-  const filename = file.name + "." + musicMeta.format;
+  const filename = file.autoRename ? (artists.join(" & ") + " - " + musicMeta.musicName + "." + musicMeta.format) : (file.name + "." + musicMeta.format);
   return {
     success: true,
     filename: filename,
