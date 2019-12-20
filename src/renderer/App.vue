@@ -2,10 +2,7 @@
   <div id="app">
     <el-dialog title="转换进度" center :close-on-click-modal="false" :close-on-press-escape="false" :visible="converting"
       :show-close="false">
-      <div class="dialog-text">正在转换第 {{ converted + 1}} 个文件，共 {{ total }} 个文件，请稍后……</div>
-      <div class="dialog-progress">
-        <el-progress type="circle" :percentage="Math.floor((converted / total) * 100)"></el-progress>
-      </div>
+      <div>正在转换第 {{ converted + 1}} 个文件，共 {{ total }} 个文件，请稍后……</div>
     </el-dialog>
     <el-tabs class="main" type="card" tab-position="left" @tab-click="clear">
       <el-tab-pane>
@@ -20,8 +17,8 @@
             <div v-if="fileList.length != 0" class="file-row-right">
               <div class="file-list">
                 <el-scrollbar class="scrollable clickable">
-                  <div v-for="(file, index) in fileList" :key="file.file.name" class="file">
-                    <div class="file-name">{{ file.file.name }}</div>
+                  <div v-for="(file, index) in fileList" :key="file.name" class="file">
+                    <div class="file-name">{{ file.name + '.' + file.ext }}</div>
                     <div @click="handleDelete(index)">
                       <i class="fas fa-trash-alt file-delete"></i>
                     </div>
@@ -47,14 +44,14 @@
         <span slot="label" class="clickable"><i class="fas fa-folder-open"></i> 选择文件夹</span>
         <div class="content">
           <div class="subtitle">请选择读取的文件夹</div>
-            <div class="control-row">
-              <el-switch v-model="childFolderIncluded" active-color="#66CCFF" inactive-color="#66CCFF" active-text="包含子目录"
-                inactive-text="不包含子目录" class="clickable"></el-switch>
-              <div class="control-row-space"></div>
-              <el-input disabled size="mini" v-model="sourceLocation" class="positionInput clickable">
-                <el-button @click="selectSourceFolder" slot="prepend">选择</el-button>
-              </el-input>
-            </div>
+          <div class="control-row">
+            <el-switch v-model="childFolderIncluded" active-color="#66CCFF" inactive-color="#66CCFF" active-text="包含子目录"
+              inactive-text="不包含子目录" class="clickable"></el-switch>
+            <div class="control-row-space"></div>
+            <el-input disabled size="mini" v-model="sourceLocation" class="positionInput clickable">
+              <el-button @click="selectSourceFolder" slot="prepend">选择</el-button>
+            </el-input>
+          </div>
           <div class="subtitle">请选择存储位置</div>
           <div class="control-row">
             <el-switch v-model="customLocation" active-color="#66CCFF" inactive-color="#66CCFF" active-text="自定义路径"
@@ -104,9 +101,10 @@
         customLocation: false,
         fileList: [],
         converted: 0,
+        failed: 0,
         total: 0,
         converting: false,
-        childFolderIncluded: true
+        childFolderIncluded: false
       }
     },
     methods: {
@@ -115,23 +113,42 @@
         this.sourceLocation = ''
         this.customLocation = false
         this.fileList = []
+        this.converted = 0
+        this.failed = 0
+        this.total = 0
+        this.converting = false
+        this.childFolderIncluded = false
       },
       handleFile(file) {
         let ext = file.name.substring(file.name.lastIndexOf(".") + 1, file.name.length).toLowerCase()
         let name = file.name.substring(0, file.name.lastIndexOf("."))
         let path = file.raw.path.substring(0, file.raw.path.lastIndexOf("\\"))
         if (['ncm', 'qmc0', 'qmc3', 'qmcflac', 'qmcogg', 'mflac'].indexOf(ext) != -1) {
-          this.fileList.push({
-            file: file,
-            path: path,
-            name: name,
-            ext: ext
+          (async (name, path, ext)=> {
+            let fileBuffer = await new Promise(resolve => {
+              let reader = new FileReader();
+              reader.onload = (e) => {
+                resolve(e.target.result);
+              };
+              reader.readAsArrayBuffer(file.raw);
+            })
+            this.fileList.push({
+              fileBuffer: fileBuffer,
+              path: path,
+              name: name,
+              ext: ext
+            })
+            this.total += 1
+          })(name, path, ext)
+        } else {
+          this.$message.error({
+            message: "文件“" + file.name + "”不可转换",
           })
-          this.total += 1
         }
       },
       handleDelete(index) {
         this.fileList.splice(index, 1)
+        this.total -= 1
       },
       selectSourceFolder(type) {
         let that = this
@@ -145,14 +162,14 @@
         ipcRenderer.send('choose-save-folder')
         ipcRenderer.on('save-selected', function(event, path) {
           that.saveLocation = path
+          that.handleFolder()
         })
       },
       convert() {
         let that = this
         if (that.customLocation && that.saveLocation == '') {
-          that.$message({
+          that.$message.warning({
             message: "请选择保存的路径",
-            type: "warning"
           })
           return
         }
@@ -163,38 +180,157 @@
             let ext
             switch (that.fileList[i].ext) {
               case "ncm":
-                data = await NcmDecrypt.Decrypt(that.fileList[i].file.raw)
+                data = await NcmDecrypt.Decrypt(that.fileList[i])
                 break
               case "qmc3":
               case "qmc0":
               case "qmcflac":
               case "qmcogg":
-                data = await QmcDecrypt.Decrypt(that.fileList[i].file.raw);
+                data = await QmcDecrypt.Decrypt(that.fileList[i]);
                 break
               case "mflac":
-                data = await MFlacDecrypt.Decrypt(that.fileList[i].file.raw)
+                data = await MFlacDecrypt.Decrypt(that.fileList[i])
                 break
             }
-            if (data) {
+            if (data.success) {
               let path
               if (that.customLocation) {
                 path = that.saveLocation + "\\" + data.filename
               } else {
                 path = that.fileList[i].path + "\\" + data.filename
               }
-              fs.writeFile(path, data, function() {
+              fs.writeFile(path, data.file, function() {
                 that.converted += 1
                 if (that.converted == that.total) {
                   that.converting = false
-                  that.$message({
-                    message: "全部文件转换完成",
-                    type: "success"
+                  that.$message.success({
+                    message: "全部 " + that.total + " 个文件转换成功",
+                    onClose: function() {
+                      that.clear()
+                    }
                   })
-                  that.clear()
+                } else if ((that.converted + that.failed) == that.total) {
+                  that.converting = false
+                  that.$message.warning({
+                    message: that.converted + " 个文件转换成功，另有 " + that.failed + " 个转换失败",
+                    onClose: function() {
+                      that.clear()
+                    }
+                  })
                 }
               })
+            } else {
+              that.failed += 1
+              that.$message.error({
+                message: "文件“" + data.filename + "”转换失败，" + data.message,
+              })
+              if (that.failed == that.total) {
+                that.converting = false
+                that.$message.error({
+                  message: "全部 " + that.total + " 个文件转换失败",
+                  onClose: function() {
+                    that.clear()
+                  }
+                })
+              } else if ((that.converted + that.failed) == that.total) {
+                that.converting = false
+                that.$message.warning({
+                  message: that.converted + " 个文件转换成功，另有 " + that.failed + " 个转换失败",
+                  onClose: function() {
+                    that.clear()
+                  }
+                })
+              }
             }
           })()
+        }
+      },
+      handleFolder() {
+        let that = this
+        if (that.childFolderIncluded) {
+          (function traverse(directory) {
+            fs.readdir(directory, function(e, files) {
+              if (e) {
+                that.$message.error({
+                  message: "读取文件夹" + path + "错误"
+                })
+              } else {
+                files.forEach(function(filename) {
+                  let filepath = path.join(directory, filename)
+                  fs.stat(filepath, function(err, stats) {
+                    if (stats.isFile()) {
+                      fs.readFile(filepath, function(error, file) {
+                        let ext = filename.substring(filename.lastIndexOf(".") + 1, filename.length).toLowerCase()
+                        let name = filename.substring(0, filename.lastIndexOf("."))
+                        let path = directory
+                        if (['ncm', 'qmc0', 'qmc3', 'qmcflac', 'qmcogg', 'mflac'].indexOf(ext) != -1) {
+                          (async (name, path, ext)=> {
+                            let fileBuffer = await new Promise(resolve => {
+                              let reader = new FileReader();
+                              reader.onload = (e) => {
+                                resolve(e.target.result);
+                              };
+                              reader.readAsArrayBuffer(new Blob([file.buffer]));
+                            })
+                            that.fileList.push({
+                              fileBuffer: fileBuffer,
+                              path: path,
+                              name: name,
+                              ext: ext
+                            })
+                            that.total += 1
+                          })(name, path, ext)
+                        }
+                      })
+                    }
+                    if (stats.isDirectory()) {
+                      traverse(filepath)
+                    }
+                  })
+                })
+              }
+            })
+          })(that.sourceLocation)
+          console.log(that.fileList)
+        } else {
+          fs.readdir(that.sourceLocation, function(e, files) {
+            if (e) {
+              that.$message.error({
+                message: "读取文件夹错误"
+              })
+            } else {
+              files.forEach(function(filename) {
+                let filepath = path.join(that.sourceLocation, filename)
+                fs.stat(filepath, function(err, stats) {
+                  if (stats.isFile) {
+                    fs.readFile(filepath, function(error, file) {
+                      let ext = filename.substring(filename.lastIndexOf(".") + 1, filename.length).toLowerCase()
+                      let name = filename.substring(0, filename.lastIndexOf("."))
+                      let path = that.sourceLocation
+                      if (['ncm', 'qmc0', 'qmc3', 'qmcflac', 'qmcogg', 'mflac'].indexOf(ext) != -1) {
+                        (async (name, path, ext)=> {
+                          let fileBuffer = await new Promise(resolve => {
+                            let reader = new FileReader();
+                            reader.onload = (e) => {
+                              resolve(e.target.result);
+                            };
+                            reader.readAsArrayBuffer(new Blob([file.buffer]));
+                          })
+                          that.fileList.push({
+                            fileBuffer: fileBuffer,
+                            path: path,
+                            name: name,
+                            ext: ext
+                          })
+                          that.total += 1
+                        })(name, path, ext)
+                      }
+                    })
+                  }
+                })
+              })
+            }
+          })
         }
       },
       minimize() {
@@ -242,17 +378,6 @@
     height: 100%;
   }
 
-  .dialog-text {
-    margin-bottom: 20px;
-  }
-
-  .dialog-progress {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-  }
-
   .el-tabs__nav-scroll {
     background-color: #F5F7FA;
   }
@@ -289,7 +414,7 @@
     height: 80px !important;
     padding: 0;
   }
-  
+
   .el-upload svg {
     color: #495057;
     font-size: 50px;
