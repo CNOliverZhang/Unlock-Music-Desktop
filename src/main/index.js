@@ -23,9 +23,14 @@ function createWindow () {
     frame: false,
     fullscreenable: false,
     resizable: false,
+    show: false
   })
 
   mainWindow.loadURL(winURL)
+  
+  mainWindow.on('ready-to-show', function () {
+    mainWindow.show()
+  })
 
   mainWindow.on('closed', () => {
     mainWindow = null
