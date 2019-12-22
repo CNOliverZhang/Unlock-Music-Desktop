@@ -22,13 +22,6 @@
   resolved "https://registry.npm.taobao.org/@fortawesome/fontawesome-common-types/download/@fortawesome/fontawesome-common-types-0.2.26.tgz#6e0b13a752676036f8196f8a1500d53a27b4adc1"
   integrity sha1-bgsTp1JnYDb4GW+KFQDVOie0rcE=
 
-"@fortawesome/fontawesome-free-brands@^5.0.13":
-  version "5.0.13"
-  resolved "https://registry.npm.taobao.org/@fortawesome/fontawesome-free-brands/download/@fortawesome/fontawesome-free-brands-5.0.13.tgz#4d15ff4e1e862d5e4a4df3654f8e8acbd47e9c09"
-  integrity sha1-TRX/Th6GLV5KTfNlT46Ky9R+nAk=
-  dependencies:
-    "@fortawesome/fontawesome-common-types" "^0.1.7"
-
 "@fortawesome/fontawesome-free-regular@^5.0.13":
   version "5.0.13"
   resolved "https://registry.npm.taobao.org/@fortawesome/fontawesome-free-regular/download/@fortawesome/fontawesome-free-regular-5.0.13.tgz#eb78c30184e3f456a423a1dcfa0f682f7b50de4a"
@@ -3059,7 +3052,7 @@ ejs@^2.6.2:
   resolved "https://registry.npm.taobao.org/ejs/download/ejs-2.7.4.tgz?cache=0&sync_timestamp=1574560333790&other_urls=https%3A%2F%2Fregistry.npm.taobao.org%2Fejs%2Fdownload%2Fejs-2.7.4.tgz#48661287573dcc53e366c7a1ae52c3a120eec9ba"
   integrity sha1-SGYSh1c9zFPjZsehrlLDoSDuybo=
 
-electron-builder@^20.19.2:
+electron-builder@^20.44.4:
   version "20.44.4"
   resolved "https://registry.npm.taobao.org/electron-builder/download/electron-builder-20.44.4.tgz?cache=0&sync_timestamp=1574846119061&other_urls=https%3A%2F%2Fregistry.npm.taobao.org%2Felectron-builder%2Fdownload%2Felectron-builder-20.44.4.tgz#c47981ddf486d582c0ae0f4d530c831010aacad7"
   integrity sha1-xHmB3fSG1YLArg9NUwyDEBCqytc=
