@@ -36,7 +36,8 @@
       "shortcutName": "洋芋田加密音乐转换工具"
     },
     "dmg": {
-      "contents": [{
+      "contents": [
+        {
           "x": 410,
           "y": 150,
           "type": "link",

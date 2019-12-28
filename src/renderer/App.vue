@@ -105,7 +105,7 @@
         <div class="subtitle">本程序的功能</div>
         <div class="text">网易云音乐新版本下载的音乐及QQ音乐下载的VIP音乐为专有文件格式，在更换播放器或会员到期后将无法播放。本程序可以将上述软件的专有格式转换为通用音乐文件格式，可以在更换播放器或会员到期后继续使用。</div>
         <div class="subtitle">支持的格式</div>
-        <div class="text">截至此版本发布时（2018年12月21日），本程序支持网易云音乐的专有格式文件（ncm）和QQ音乐旧版专有格式文件（qmc0, qmc3, qmcflac, qmcogg），并对QQ音乐新版专有无损格式文件(mflac)提供有限支持。</div>
+        <div class="text">截至此版本发布时（2019年12月28日），本程序支持网易云音乐的专有格式文件（ncm）和QQ音乐旧版专有格式文件（qmc0, qmc3, qmcflac, qmcogg），并对QQ音乐新版专有无损格式文件(mflac)提供有限支持。</div>
         <div class="subtitle">法律声明</div>
         <div class="text">本程序仅供学习及研究上述软件的专有格式加密算法，相关音乐版权归原持有方所有。请勿使用本软件从事违法版权保护和计算机网络安全相关法律法规的行为，否则后果自行承担。</div>
         <div class="subtitle">开源信息</div>
@@ -119,7 +119,7 @@
             <div>最小化</div>
           </div>
           <div class="control-button clickable" @click="exit">
-            <i class="fas fa-sign-out-alt"></i>
+            <span class="fas fa-sign-out-alt"></span>
             <div>退出</div>
           </div>
         </div>
@@ -191,6 +191,7 @@
             })
           })(name, path, ext)
         } else {
+          this.$message.closeAll()
           this.$message.error({
             message: "文件“" + file.name + "”不可转换"
           })
@@ -216,6 +217,7 @@
       convert() {
         let that = this
         if (that.customLocation && that.saveLocation == '') {
+          that.$message.closeAll()
           that.$message.warning({
             message: "请选择保存的路径"
           })
@@ -252,6 +254,7 @@
                 that.converted += 1
                 if (that.converted == that.fileList.length) {
                   that.converting = false
+                  that.$message.closeAll()
                   that.$message.success({
                     message: "全部 " + that.fileList.length + " 个文件转换成功",
                     onClose: function() {
@@ -260,6 +263,7 @@
                   })
                 } else if ((that.converted + that.failed) == that.fileList.length) {
                   that.converting = false
+                  that.$message.closeAll()
                   that.$message.warning({
                     message: that.converted + " 个文件转换成功，另有 " + that.failed + " 个转换失败",
                     onClose: function() {
@@ -270,11 +274,13 @@
               })
             } else {
               that.failed += 1
+              that.$message.closeAll()
               that.$message.error({
                 message: "文件“" + data.filename + "”转换失败，" + data.message
               })
               if (that.failed == that.fileList.length) {
                 that.converting = false
+                that.$message.closeAll()
                 that.$message.error({
                   message: "全部 " + that.fileList.length + " 个文件转换失败",
                   onClose: function() {
@@ -283,6 +289,7 @@
                 })
               } else if ((that.converted + that.failed) == that.fileList.length) {
                 that.converting = false
+                that.$message.closeAll()
                 that.$message.warning({
                   message: that.converted + " 个文件转换成功，另有 " + that.failed + " 个转换失败",
                   onClose: function() {
@@ -297,6 +304,7 @@
       handleFolder() {
         let that = this
         if (that.sourceLocation == '') {
+          that.$message.closeAll()
           that.$message.warning({
             message: "请选择读取的目录"
           })
@@ -308,6 +316,7 @@
           (function traverse(directory, dirList) {
             fs.readdir(directory, function(e, files) {
               if (e) {
+                that.$message.closeAll()
                 that.$message.error({
                   message: "读取文件夹" + path + "错误"
                 })
@@ -352,6 +361,7 @@
                 } else {
                   that.traversing = false
                   that.traversed = 0
+                  that.$message.closeAll()
                   that.$message.success({
                     message: "已扫描完成所选择的文件夹及子文件夹"
                   })
@@ -363,6 +373,7 @@
           that.traversing = true
           fs.readdir(that.sourceLocation, function(e, files) {
             if (e) {
+              that.$message.closeAll()
               that.$message.error({
                 message: "读取文件夹错误"
               })
@@ -400,6 +411,7 @@
               }
               that.traversing = false
               that.traversed = 0
+              that.$message.closeAll()
               that.$message.success({
                 message: "已扫描完成所选择的文件夹"
               })

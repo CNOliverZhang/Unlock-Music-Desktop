@@ -18,6 +18,7 @@ function createWindow () {
    * Initial window options
    */
   mainWindow = new BrowserWindow({
+    title: '洋芋田加密音乐转换'
     height: 500,
     width: 800,
     frame: false,
